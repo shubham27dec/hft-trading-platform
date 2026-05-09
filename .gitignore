@@ -1,0 +1,43 @@
+# Maven
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Spring Boot
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Chronicle
+chronicle-data/
+*.cq4
+*.cq4t
+
+# Docker
+docker/data/
+
+# SonarQube
+.sonar/
+
+# Internal docs
+ARCHITECTURE.md
+CLAUDE.md
