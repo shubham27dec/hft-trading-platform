@@ -41,3 +41,6 @@ docker/data/
 # Internal docs
 ARCHITECTURE.md
 CLAUDE.md
+
+# Local Maven settings (SAP machine workaround)
+settings.xml
