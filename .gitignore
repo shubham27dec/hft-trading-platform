@@ -44,3 +44,5 @@ CLAUDE.md
 
 # Local Maven settings (SAP machine workaround)
 settings.xml
+.envrc
+bin/
