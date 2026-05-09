@@ -41,6 +41,7 @@
         <alpaca4j.version>7.2</alpaca4j.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <karate.version>1.4.1</karate.version>
+        <sonar.organization>shubham27dec</sonar.organization>
     </properties>
 
     <dependencyManagement>
