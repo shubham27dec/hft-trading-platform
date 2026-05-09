@@ -58,7 +58,7 @@
         <!-- Market data + execution -->
         <dependency>
             <groupId>net.jacobpeterson.alpaca</groupId>
-            <artifactId>alpaca4j</artifactId>
+            <artifactId>alpaca-java</artifactId>
             <version>${alpaca4j.version}</version>
         </dependency>
 
