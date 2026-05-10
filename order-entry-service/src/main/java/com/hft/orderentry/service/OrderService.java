@@ -1,6 +1,6 @@
 package com.hft.orderentry.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.hft.core.enums.OrderStatus;
 import com.hft.core.event.OrderSubmittedEvent;
 import com.hft.core.model.Tick;
