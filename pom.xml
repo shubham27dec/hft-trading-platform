@@ -142,12 +142,16 @@
                         <phase>verify</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
-                    <!-- fails build if line coverage drops below 70% -->
+                    <!-- fails build if line coverage drops below 85% -->
                     <execution>
                         <id>check</id>
                         <phase>verify</phase>
                         <goals><goal>check</goal></goals>
                         <configuration>
+                            <!-- Spring Boot main classes are not unit-testable; exclude them -->
+                            <excludes>
+                                <exclude>**/*Application.class</exclude>
+                            </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
