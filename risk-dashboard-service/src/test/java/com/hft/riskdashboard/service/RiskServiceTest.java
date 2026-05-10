@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -83,6 +85,22 @@ class RiskServiceTest {
     void restore_clearsHalt() {
         service.restore();
         verify(riskState).restore();
+    }
+
+    @Test
+    void getAllSnapshots_stampsCurrentHaltBitOnEachMetrics() {
+        RiskMetrics m1 = new RiskMetrics();
+        m1.setAccountId("acc-1");
+        RiskMetrics m2 = new RiskMetrics();
+        m2.setAccountId("acc-2");
+        when(riskState.getAll()).thenReturn(List.of(m1, m2));
+        when(riskState.isHalted()).thenReturn(true);
+
+        List<RiskMetrics> result = service.getAllSnapshots();
+
+        assertEquals(2, result.size());
+        assertTrue(result.get(0).isHaltActive());
+        assertTrue(result.get(1).isHaltActive());
     }
 
     private OrderFilledEvent fill(String accountId, long qty, double price) {
