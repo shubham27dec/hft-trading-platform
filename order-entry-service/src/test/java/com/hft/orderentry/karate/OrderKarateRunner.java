@@ -12,8 +12,8 @@ class OrderKarateRunner extends AbstractIntegrationTest {
     private int port;
 
     @Test
-    Karate testOrders() {
-        return Karate.run("classpath:karate/orders.feature")
+    void testOrders() {
+        Karate.run("classpath:karate/orders.feature")
                 .systemProperty("baseUrl", "http://localhost:" + port);
     }
 }
