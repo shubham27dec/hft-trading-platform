@@ -8,22 +8,14 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.net.http.HttpClient;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
 class FeedHandlerTest {
-
-    @Mock HttpClient http;
 
     private Disruptor<TickEvent> tickDisruptor;
     private BlockingQueue<TickEvent> captured;
@@ -42,8 +34,7 @@ class FeedHandlerTest {
         });
         tickDisruptor.start();
 
-        handler = new FeedHandler("key", "secret", Set.of("AAPL", "TSLA"),
-                tickDisruptor.getRingBuffer(), http, new ObjectMapper());
+        handler = new FeedHandler(tickDisruptor.getRingBuffer(), new ObjectMapper());
     }
 
     @AfterEach
@@ -100,7 +91,8 @@ class FeedHandlerTest {
     }
 
     @Test
-    void isRunning_beforeStart_returnsFalse() {
-        assertFalse(handler.isRunning());
+    void handleMessage_nonArrayJson_ignored() throws Exception {
+        assertDoesNotThrow(() -> handler.handleMessage("{\"T\":\"q\"}"));
+        assertNull(captured.poll(200, TimeUnit.MILLISECONDS));
     }
 }

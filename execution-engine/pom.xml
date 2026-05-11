@@ -118,8 +118,8 @@
                                 <exclude>**/kafka/FillKafkaProducer.class</exclude>
                                 <exclude>**/kafka/OrderEventConsumer.class</exclude>
                                 <exclude>**/wal/ChronicleWAL.class</exclude>
-                                <exclude>**/feed/FeedHandler.class</exclude>
-                                <exclude>**/feed/FeedHandler$*.class</exclude>
+                                <exclude>**/feed/FeedConnector.class</exclude>
+                                <exclude>**/feed/FeedConnector$*.class</exclude>
                                 <exclude>**/aeron/AeronPublishHandler.class</exclude>
                                 <exclude>**/aeron/AeronOrderSubscriber.class</exclude>
                             </excludes>

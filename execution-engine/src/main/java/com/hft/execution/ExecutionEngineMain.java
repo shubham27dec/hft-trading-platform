@@ -7,6 +7,7 @@ import com.hft.execution.event.OrderEvent;
 import com.hft.execution.event.OrderEventFactory;
 import com.hft.execution.event.TickEvent;
 import com.hft.execution.event.TickEventFactory;
+import com.hft.execution.feed.FeedConnector;
 import com.hft.execution.feed.FeedHandler;
 import com.hft.execution.feed.PriceCache;
 import com.hft.execution.handler.ExecutionHandler;
@@ -91,10 +92,11 @@ public class ExecutionEngineMain {
         tickDisruptor.start();
 
         // Feed handler: Alpaca WebSocket → Disruptor #1
-        FeedHandler feedHandler = new FeedHandler(
-                alpacaKeyId, alpacaSecretKey, watchedSymbols, tickDisruptor.getRingBuffer());
-        feedHandler.start();
-        log.info("FeedHandler started — subscribing to {} symbols", watchedSymbols.size());
+        FeedHandler feedHandler = new FeedHandler(tickDisruptor.getRingBuffer());
+        FeedConnector feedConnector = new FeedConnector(
+                alpacaKeyId, alpacaSecretKey, watchedSymbols, feedHandler);
+        feedConnector.start();
+        log.info("FeedConnector started — subscribing to {} symbols", watchedSymbols.size());
 
         // Aeron subscriber: polls IPC channel → ExecutionHandler
         ExecutionHandler executionHandler = new ExecutionHandler(alpaca, simulated, wal, kafkaProducer);
@@ -115,7 +117,7 @@ public class ExecutionEngineMain {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down execution engine");
             haltBit.halt("JVM shutdown");
-            feedHandler.stop();
+            feedConnector.stop();
             aeronSubscriber.stop();
             tickDisruptor.shutdown();
             riskDisruptor.shutdown();
