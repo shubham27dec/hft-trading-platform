@@ -103,13 +103,5 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          WAIT_FLAG=""
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            WAIT_FLAG="-Dsonar.qualitygate.wait=true"
-          fi
-          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=shubham27dec_hft-trading-platform \
-            -Dsonar.organization=shubham27dec \
-            -Dsonar.host.url=https://sonarcloud.io \
-            $WAIT_FLAG --batch-mode
+          GITHUB_REF: refs/heads/main
+        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=shubham27dec_hft-trading-platform -Dsonar.organization=shubham27dec -Dsonar.host.url=https://sonarcloud.io -Dsonar.qualitygate.wait=true --batch-mode
