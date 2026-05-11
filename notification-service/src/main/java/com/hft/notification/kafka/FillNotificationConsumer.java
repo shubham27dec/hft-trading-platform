@@ -23,7 +23,7 @@ public class FillNotificationConsumer {
             notificationService.notifyFill(event);
         } catch (Exception e) {
             log.error("Failed to process fill notification: {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

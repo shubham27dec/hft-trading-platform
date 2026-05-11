@@ -23,7 +23,7 @@ public class FillAuditConsumer {
             auditService.recordFill(event);
         } catch (Exception e) {
             log.error("Failed to audit fill event: {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

@@ -23,7 +23,7 @@ public class RejectAuditConsumer {
             auditService.recordRejection(event);
         } catch (Exception e) {
             log.error("Failed to audit rejection event: {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

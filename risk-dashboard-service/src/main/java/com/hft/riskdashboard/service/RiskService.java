@@ -16,39 +16,25 @@ public class RiskService {
     private final RiskState riskState;
 
     public void processFill(OrderFilledEvent event) {
-        RiskMetrics m = riskState.getOrCreate(event.getAccountId());
-        synchronized (m) {
-            m.setFillCount(m.getFillCount() + 1);
-            m.setGrossExposure(m.getGrossExposure()
-                    + Math.abs(event.getFilledQty() * event.getFillPrice()));
-            m.setHaltActive(riskState.isHalted());
-        }
+        riskState.getOrCreate(event.getAccountId())
+                .recordFill(event.getFilledQty(), event.getFillPrice(), riskState.isHalted());
     }
 
     public void processRejection(OrderRejectedEvent event) {
-        RiskMetrics m = riskState.getOrCreate(event.getAccountId());
-        synchronized (m) {
-            m.setRejectCount(m.getRejectCount() + 1);
-            m.setHaltActive(riskState.isHalted());
-        }
+        riskState.getOrCreate(event.getAccountId())
+                .recordRejection(riskState.isHalted());
     }
 
     public RiskMetrics getSnapshot(String accountId) {
         RiskMetrics m = riskState.getOrCreate(accountId);
-        synchronized (m) {
-            m.setHaltActive(riskState.isHalted());
-        }
+        m.refreshHaltStatus(riskState.isHalted());
         return m;
     }
 
     public List<RiskMetrics> getAllSnapshots() {
         List<RiskMetrics> all = riskState.getAll();
         boolean halted = riskState.isHalted();
-        all.forEach(m -> {
-            synchronized (m) {
-                m.setHaltActive(halted);
-            }
-        });
+        all.forEach(m -> m.refreshHaltStatus(halted));
         return all;
     }
 

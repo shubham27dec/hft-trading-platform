@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -63,7 +62,7 @@ public class PositionService {
                 .filter(Objects::nonNull)
                 .map(this::deserialize)
                 .filter(p -> p.getNetQty() != 0)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // Package-private for unit testing
