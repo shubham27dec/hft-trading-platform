@@ -17,4 +17,5 @@ public class OrderResponse {
     private String symbol;
     private OrderStatus status;
     private long submittedAt;
+    private double quotePrice;
 }

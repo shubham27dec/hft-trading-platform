@@ -4,7 +4,9 @@ import tools.jackson.databind.ObjectMapper;
 import com.hft.core.enums.OrderSide;
 import com.hft.core.enums.OrderStatus;
 import com.hft.core.enums.OrderType;
+import com.hft.orderentry.client.AlpacaQuoteClient;
 import com.hft.orderentry.dto.OrderRequest;
+import com.hft.orderentry.exception.QuoteUnavailableException;
 import com.hft.orderentry.dto.OrderResponse;
 import com.hft.orderentry.repository.TraderAccountRepository;
 import com.hft.orderentry.service.OrderService;
@@ -44,6 +46,7 @@ class OrderControllerTest {
     @MockitoBean private TraderAccountRepository traderAccountRepository;
     @MockitoBean private JwtDecoder jwtDecoder;
     @MockitoBean private StringRedisTemplate stringRedisTemplate;
+    @MockitoBean private AlpacaQuoteClient alpacaQuoteClient;
 
     @BeforeEach
     void setup() {
@@ -105,6 +108,18 @@ class OrderControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    void submitOrder_quoteUnavailable_returns400WithMessage() throws Exception {
+        when(orderService.submitOrder(any())).thenThrow(new QuoteUnavailableException("AAPL"));
+
+        mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Market data unavailable for AAPL. Please try again shortly."));
     }
 
     private OrderRequest validRequest() {
