@@ -1,0 +1,16 @@
+#!/bin/sh
+# Runs before every push. Blocks push if clean install fails or coverage drops below 85%.
+# Install once per clone: git config core.hooksPath .githooks
+
+echo "=== Pre-push: mvn clean install (full build + tests + JaCoCo coverage check) ==="
+mvn clean install -s settings.xml --batch-mode -q
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "PUSH BLOCKED: mvn clean install failed."
+    echo "Run 'mvn clean install -s settings.xml' to see the details."
+    exit 1
+fi
+
+echo "=== All checks passed. Pushing. ==="
+exit 0

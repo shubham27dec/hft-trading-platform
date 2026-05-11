@@ -1,7 +1,7 @@
-package com.hft.riskdashboard.kafka;
+package com.hft.audit.kafka;
 
 import com.hft.core.event.OrderRejectedEvent;
-import com.hft.riskdashboard.service.RiskService;
+import com.hft.audit.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,18 +11,18 @@ import tools.jackson.databind.ObjectMapper;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RejectConsumer {
+public class RejectAuditConsumer {
 
-    private final RiskService riskService;
+    private final AuditService auditService;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "orders.rejected", groupId = "risk-dashboard-service")
+    @KafkaListener(topics = "orders.rejected", groupId = "audit-service")
     public void consume(String message) {
         try {
             OrderRejectedEvent event = objectMapper.readValue(message, OrderRejectedEvent.class);
-            riskService.processRejection(event);
+            auditService.recordRejection(event);
         } catch (Exception e) {
-            log.error("Failed to process rejected event: {}", e.getMessage());
+            log.error("Failed to audit rejection event: {}", e.getMessage());
             throw new IllegalStateException(e);
         }
     }

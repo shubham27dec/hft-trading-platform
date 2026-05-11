@@ -69,12 +69,12 @@ class OrderIntegrationTest extends AbstractIntegrationTest {
                 .createConsumer();
         embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "orders.submitted");
 
-        ConsumerRecord<String, String> record = KafkaTestUtils.getSingleRecord(
+        ConsumerRecord<String, String> consumed = KafkaTestUtils.getSingleRecord(
                 consumer, "orders.submitted");
 
-        assertNotNull(record.value());
-        assertTrue(record.value().contains("AAPL"));
-        assertTrue(record.value().contains("integration-test-1"));
+        assertNotNull(consumed.value());
+        assertTrue(consumed.value().contains("AAPL"));
+        assertTrue(consumed.value().contains("integration-test-1"));
         consumer.close();
     }
 }
