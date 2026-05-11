@@ -42,6 +42,8 @@
         <testcontainers.version>1.19.8</testcontainers.version>
         <karate.version>1.4.1</karate.version>
         <sonar.organization>shubham27dec</sonar.organization>
+        <sonar.projectKey>shubham27dec_hft-trading-platform</sonar.projectKey>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
