@@ -13,9 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.http.HttpClient;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,12 +26,12 @@ class FeedHandlerTest {
     @Mock HttpClient http;
 
     private Disruptor<TickEvent> tickDisruptor;
-    private List<TickEvent> captured;
+    private BlockingQueue<TickEvent> captured;
     private FeedHandler handler;
 
     @BeforeEach
     void setUp() {
-        captured = new ArrayList<>();
+        captured = new LinkedBlockingQueue<>();
         tickDisruptor = new Disruptor<>(new TickEventFactory(), 64, DaemonThreadFactory.INSTANCE);
         tickDisruptor.handleEventsWith((event, seq, eob) -> {
             TickEvent copy = new TickEvent();
@@ -54,11 +55,11 @@ class FeedHandlerTest {
     void handleMessage_quoteMessage_publishesTickEventToDisruptor() throws Exception {
         handler.handleMessage("[{\"T\":\"q\",\"S\":\"AAPL\",\"ap\":150.5,\"bp\":150.3}]");
 
-        Thread.sleep(50);
-        assertEquals(1, captured.size());
-        assertEquals("AAPL", captured.get(0).symbol);
-        assertEquals(150.5, captured.get(0).ask, 0.001);
-        assertEquals(150.3, captured.get(0).bid, 0.001);
+        TickEvent tick = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(tick);
+        assertEquals("AAPL", tick.symbol);
+        assertEquals(150.5, tick.ask, 0.001);
+        assertEquals(150.3, tick.bid, 0.001);
     }
 
     @Test
@@ -68,24 +69,23 @@ class FeedHandlerTest {
                 "{\"T\":\"q\",\"S\":\"TSLA\",\"ap\":200.0,\"bp\":199.5}" +
                 "]");
 
-        Thread.sleep(50);
-        assertEquals(2, captured.size());
+        assertNotNull(captured.poll(1, TimeUnit.SECONDS));
+        assertNotNull(captured.poll(1, TimeUnit.SECONDS));
+        assertTrue(captured.isEmpty());
     }
 
     @Test
     void handleMessage_zeroAskAndBid_doesNotPublish() throws Exception {
         handler.handleMessage("[{\"T\":\"q\",\"S\":\"AAPL\",\"ap\":0,\"bp\":0}]");
 
-        Thread.sleep(50);
-        assertEquals(0, captured.size());
+        assertNull(captured.poll(200, TimeUnit.MILLISECONDS));
     }
 
     @Test
     void handleMessage_nonQuoteType_ignored() throws Exception {
         handler.handleMessage("[{\"T\":\"t\",\"S\":\"AAPL\",\"ap\":150.0,\"bp\":149.9}]");
 
-        Thread.sleep(50);
-        assertEquals(0, captured.size());
+        assertNull(captured.poll(200, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -96,8 +96,7 @@ class FeedHandlerTest {
     @Test
     void handleMessage_emptyArray_doesNothing() throws Exception {
         assertDoesNotThrow(() -> handler.handleMessage("[]"));
-        Thread.sleep(50);
-        assertEquals(0, captured.size());
+        assertNull(captured.poll(200, TimeUnit.MILLISECONDS));
     }
 
     @Test

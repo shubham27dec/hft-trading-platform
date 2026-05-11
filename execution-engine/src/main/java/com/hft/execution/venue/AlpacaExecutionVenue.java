@@ -57,6 +57,10 @@ public class AlpacaExecutionVenue implements ExecutionVenue {
             double ask = quote.path("ap").asDouble();
             double bid = quote.path("bp").asDouble();
             return new VenueQuote(ask, bid);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Alpaca quote fetch interrupted for {}", symbol);
+            return new VenueQuote(0, 0);
         } catch (Exception e) {
             log.warn("Alpaca quote fetch failed for {}: {}", symbol, e.getMessage());
             return new VenueQuote(0, 0);
@@ -87,9 +91,12 @@ public class AlpacaExecutionVenue implements ExecutionVenue {
             double fillPrice = node.path("filled_avg_price").asDouble(event.routedAsk);
             long filledQty = node.path("filled_qty").asLong(event.quantity);
             return new ExecutionResult(fillId, fillPrice, filledQty);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Alpaca execution interrupted for " + event.orderId, e);
         } catch (Exception e) {
             log.error("Alpaca order execution failed for {}: {}", event.orderId, e.getMessage());
-            throw new RuntimeException("Alpaca execution failed: " + e.getMessage(), e);
+            throw new IllegalStateException("Alpaca execution failed: " + e.getMessage(), e);
         }
     }
 }

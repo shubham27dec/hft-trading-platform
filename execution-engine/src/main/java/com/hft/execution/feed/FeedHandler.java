@@ -59,10 +59,14 @@ public class FeedHandler {
                     .get(10, TimeUnit.SECONDS);
             connected.await(10, TimeUnit.SECONDS);
             log.info("FeedHandler connected to Alpaca WebSocket");
+        } catch (InterruptedException e) {
+            running.set(false);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("FeedHandler interrupted while connecting", e);
         } catch (Exception e) {
             running.set(false);
             log.error("FeedHandler failed to connect: {}", e.getMessage());
-            throw new RuntimeException("FeedHandler connect failed", e);
+            throw new IllegalStateException("FeedHandler connect failed", e);
         }
     }
 
@@ -90,7 +94,9 @@ public class FeedHandler {
                 } else if ("authenticated".equals(type)) {
                     sendSubscribe();
                 } else if ("error".equals(type)) {
-                    log.error("Alpaca WS error: {}", node.path("msg").asText());
+                    if (log.isErrorEnabled()) {
+                        log.error("Alpaca WS error: {}", node.path("msg").asText());
+                    }
                 }
             }
         } catch (Exception e) {

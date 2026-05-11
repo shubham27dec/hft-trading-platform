@@ -1,5 +1,6 @@
 package com.hft.execution.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hft.core.event.OrderFilledEvent;
 import com.hft.core.event.OrderRejectedEvent;
@@ -63,7 +64,7 @@ public class FillKafkaProducer implements AutoCloseable {
         }
     }
 
-    private void send(String topic, String key, Object value) throws Exception {
+    private void send(String topic, String key, Object value) throws JsonProcessingException {
         String json = mapper.writeValueAsString(value);
         producer.send(new ProducerRecord<>(topic, key, json));
     }

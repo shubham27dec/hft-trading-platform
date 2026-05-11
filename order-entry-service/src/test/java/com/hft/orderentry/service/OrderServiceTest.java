@@ -92,8 +92,8 @@ class OrderServiceTest {
         when(redisTemplate.keys(anyString())).thenReturn(null);
         when(alpacaQuoteClient.getSnapshots(anySet())).thenThrow(new QuoteUnavailableException("AAPL"));
 
-        assertThrows(QuoteUnavailableException.class,
-                () -> orderService.submitOrder(buildRequest("client-3", "AAPL", OrderSide.BUY, OrderType.MARKET, 100, 0)));
+        OrderRequest req3 = buildRequest("client-3", "AAPL", OrderSide.BUY, OrderType.MARKET, 100, 0);
+        assertThrows(QuoteUnavailableException.class, () -> orderService.submitOrder(req3));
 
         verify(kafkaProducer, never()).publish(any());
     }

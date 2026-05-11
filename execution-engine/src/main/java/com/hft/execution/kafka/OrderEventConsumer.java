@@ -46,9 +46,9 @@ public class OrderEventConsumer implements Runnable, AutoCloseable {
         log.info("OrderEventConsumer started, polling {}", TOPIC);
         while (running) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(10));
-            for (ConsumerRecord<String, String> record : records) {
+            for (ConsumerRecord<String, String> msg : records) {
                 try {
-                    OrderSubmittedEvent submitted = mapper.readValue(record.value(), OrderSubmittedEvent.class);
+                    OrderSubmittedEvent submitted = mapper.readValue(msg.value(), OrderSubmittedEvent.class);
                     long sequence = ringBuffer.next();
                     try {
                         OrderEvent event = ringBuffer.get(sequence);
@@ -66,8 +66,8 @@ public class OrderEventConsumer implements Runnable, AutoCloseable {
                         ringBuffer.publish(sequence);
                     }
                     consumer.commitSync(Map.of(
-                            new org.apache.kafka.common.TopicPartition(record.topic(), record.partition()),
-                            new org.apache.kafka.clients.consumer.OffsetAndMetadata(record.offset() + 1)));
+                            new org.apache.kafka.common.TopicPartition(msg.topic(), msg.partition()),
+                            new org.apache.kafka.clients.consumer.OffsetAndMetadata(msg.offset() + 1)));
                 } catch (Exception e) {
                     log.error("Failed to process Kafka record: {}", e.getMessage());
                 }

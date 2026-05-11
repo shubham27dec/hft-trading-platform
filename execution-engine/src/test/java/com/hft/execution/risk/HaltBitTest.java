@@ -32,6 +32,7 @@ class HaltBitTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2925")
     void heartbeat_preventsWatchdogHalt() throws InterruptedException {
         HaltBit haltBit = new HaltBit();
         haltBit.startWatchdog();

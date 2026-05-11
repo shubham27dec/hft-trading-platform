@@ -38,6 +38,7 @@ public class ExecutionEngineMain {
     private static final String AERON_CHANNEL = "aeron:ipc";
     private static final int AERON_STREAM_ID = 1;
 
+    @SuppressWarnings("java:S1172")
     public static void main(String[] args) throws Exception {
         String bootstrapServers = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
         String alpacaKeyId     = System.getenv().getOrDefault("ALPACA_KEY_ID", "");
@@ -124,8 +125,8 @@ public class ExecutionEngineMain {
             subscription.close();
             aeron.close();
             mediaDriver.close();
-            try { wal.close(); } catch (Exception ignored) {}
-            try { kafkaProducer.close(); } catch (Exception ignored) {}
+            try { wal.close(); } catch (Exception e) { log.warn("WAL close error: {}", e.getMessage()); }
+            try { kafkaProducer.close(); } catch (Exception e) { log.warn("Producer close error: {}", e.getMessage()); }
         }));
 
         consumerThread.join();

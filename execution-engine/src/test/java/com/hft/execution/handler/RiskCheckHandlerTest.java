@@ -12,8 +12,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,15 +24,14 @@ class RiskCheckHandlerTest {
     private BloomFilterDedup dedup;
     private RiskCheckHandler handler;
     private Disruptor<OrderEvent> routingDisruptor;
-    private List<OrderEvent> captured;
+    private BlockingQueue<OrderEvent> captured;
 
     @BeforeEach
     void setUp() {
         haltBit = new HaltBit();
         dedup = new BloomFilterDedup();
-        captured = new ArrayList<>();
+        captured = new LinkedBlockingQueue<>();
 
-        // Real Disruptor #3 ring buffer — capture handler records what arrives
         routingDisruptor = new Disruptor<>(new OrderEventFactory(), 64, DaemonThreadFactory.INSTANCE);
         routingDisruptor.handleEventsWith((event, seq, eob) -> {
             OrderEvent copy = new OrderEvent();
@@ -50,27 +50,23 @@ class RiskCheckHandlerTest {
 
     @Test
     void validOrder_passesAndForwardsToRouting() throws Exception {
-        OrderEvent event = buildEvent("order-1", "client-1", 100);
-        handler.onEvent(event, 0, false);
+        handler.onEvent(buildEvent("order-1", "client-1", 100), 0, false);
 
-        assertTrue(event.riskPassed);
-        Thread.sleep(50);
-        assertEquals(1, captured.size());
-        assertTrue(captured.get(0).riskPassed);
-        assertEquals("order-1", captured.get(0).orderId);
+        OrderEvent forwarded = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(forwarded);
+        assertTrue(forwarded.riskPassed);
+        assertEquals("order-1", forwarded.orderId);
     }
 
     @Test
     void haltedBit_rejectsAndForwardsToRouting() throws Exception {
         haltBit.halt("test halt");
-        OrderEvent event = buildEvent("order-2", "client-2", 100);
-        handler.onEvent(event, 0, false);
+        handler.onEvent(buildEvent("order-2", "client-2", 100), 0, false);
 
-        assertFalse(event.riskPassed);
-        assertEquals("Trading halted", event.rejectionReason);
-        Thread.sleep(50);
-        assertEquals(1, captured.size());
-        assertFalse(captured.get(0).riskPassed);
+        OrderEvent forwarded = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(forwarded);
+        assertFalse(forwarded.riskPassed);
+        assertEquals("Trading halted", forwarded.rejectionReason);
     }
 
     @Test
@@ -78,21 +74,23 @@ class RiskCheckHandlerTest {
         handler.onEvent(buildEvent("order-3", "client-dup", 100), 0, false);
         handler.onEvent(buildEvent("order-4", "client-dup", 100), 1, false);
 
-        Thread.sleep(50);
-        assertEquals(2, captured.size());
-        assertTrue(captured.get(0).riskPassed);
-        assertFalse(captured.get(1).riskPassed);
-        assertTrue(captured.get(1).rejectionReason.contains("Duplicate"));
+        OrderEvent first = captured.poll(1, TimeUnit.SECONDS);
+        OrderEvent second = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(first);
+        assertNotNull(second);
+        assertTrue(first.riskPassed);
+        assertFalse(second.riskPassed);
+        assertTrue(second.rejectionReason.contains("Duplicate"));
     }
 
     @Test
     void zeroQuantity_rejectsOrder() throws Exception {
         handler.onEvent(buildEvent("order-5", "client-5", 0), 0, false);
 
-        Thread.sleep(50);
-        assertEquals(1, captured.size());
-        assertFalse(captured.get(0).riskPassed);
-        assertTrue(captured.get(0).rejectionReason.contains("quantity"));
+        OrderEvent forwarded = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(forwarded);
+        assertFalse(forwarded.riskPassed);
+        assertTrue(forwarded.rejectionReason.contains("quantity"));
     }
 
     private OrderEvent buildEvent(String orderId, String clientOrderId, long qty) {

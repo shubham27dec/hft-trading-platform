@@ -73,7 +73,34 @@ class AlpacaExecutionVenueTest {
     void execute_httpThrows_throwsRuntimeException() throws Exception {
         when(http.send(any(), any())).thenThrow(new RuntimeException("connection refused"));
 
-        assertThrows(RuntimeException.class, () -> venue.execute(buildEvent()));
+        OrderEvent event = buildEvent();
+        assertThrows(IllegalStateException.class, () -> venue.execute(event));
+    }
+
+    @Test
+    void getQuote_interrupted_setsInterruptFlagAndReturnsZeroQuote() throws Exception {
+        when(http.send(any(), any())).thenThrow(new InterruptedException("interrupted"));
+
+        VenueQuote quote = venue.getQuote("AAPL");
+
+        assertEquals(0, quote.ask());
+        assertEquals(0, quote.bid());
+        assertTrue(Thread.interrupted()); // clears the flag after checking
+    }
+
+    @Test
+    void execute_interrupted_setsInterruptFlagAndThrows() throws Exception {
+        when(http.send(any(), any())).thenThrow(new InterruptedException("interrupted"));
+
+        OrderEvent event = buildEvent();
+        assertThrows(IllegalStateException.class, () -> venue.execute(event));
+        assertTrue(Thread.interrupted());
+    }
+
+    @Test
+    void publicConstructor_createsVenue() {
+        AlpacaExecutionVenue v = new AlpacaExecutionVenue("k", "s");
+        assertEquals("ALPACA", v.name());
     }
 
     private OrderEvent buildEvent() {
