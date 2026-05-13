@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .panel {
+    @apply bg-gray-900 border border-gray-700 rounded-lg p-3 h-full flex flex-col overflow-hidden;
+  }
+  .panel-title {
+    @apply text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 shrink-0;
+  }
+  .input {
+    @apply bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100
+           focus:outline-none focus:border-blue-500 w-full;
+  }
+}
