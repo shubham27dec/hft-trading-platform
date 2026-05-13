@@ -5,9 +5,9 @@ spring:
   application:
     name: audit-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/hft
-    username: hft
-    password: hft
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/hft
+    username: ${DB_USER:hft}
+    password: ${DB_PASSWORD:hft}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,7 +15,7 @@ spring:
       hibernate:
         default_schema: audit
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: audit-service
       auto-offset-reset: earliest
