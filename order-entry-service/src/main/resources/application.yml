@@ -50,3 +50,10 @@ management:
 logging:
   level:
     com.hft: DEBUG
+
+alpaca:
+  api:
+    key-id: ${ALPACA_KEY_ID:}
+    secret-key: ${ALPACA_SECRET_KEY:}
+  data:
+    base-url: https://data.alpaca.markets

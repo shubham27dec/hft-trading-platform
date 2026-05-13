@@ -36,3 +36,10 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+alpaca:
+  api:
+    key-id: test-key
+    secret-key: test-secret
+  data:
+    base-url: http://localhost:9999

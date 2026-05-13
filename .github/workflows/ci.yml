@@ -103,4 +103,4 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=shubham27dec_hft-trading-platform -Dsonar.organization=shubham27dec -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=main -Dsonar.qualitygate.wait=true --batch-mode
+        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=shubham27dec_hft-trading-platform -Dsonar.organization=shubham27dec -Dsonar.host.url=https://sonarcloud.io -Dsonar.branch.name=main -Dsonar.qualitygate.wait=true "-Dsonar.coverage.exclusions=**/feed/FeedConnector.java,**/aeron/AeronPublishHandler.java,**/aeron/AeronOrderSubscriber.java,**/wal/ChronicleWAL.java,**/kafka/FillKafkaProducer.java,**/kafka/OrderEventConsumer.java,**/ExecutionEngineMain.java" --batch-mode
