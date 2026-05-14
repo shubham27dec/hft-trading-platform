@@ -28,6 +28,18 @@
       }
     }
   ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
+        "defaultScope": "openid email profile"
+      }
+    }
+  ],
   "users": [
     {
       "id": "00000000-0000-0000-0000-000000000001",

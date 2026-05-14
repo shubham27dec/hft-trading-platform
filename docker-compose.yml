@@ -5,7 +5,13 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.0
     container_name: keycloak
-    command: start-dev --import-realm
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      "sed -e \"s|\\${GOOGLE_CLIENT_ID}|${GOOGLE_CLIENT_ID}|g\"
+           -e \"s|\\${GOOGLE_CLIENT_SECRET}|${GOOGLE_CLIENT_SECRET}|g\"
+           /opt/keycloak/data/import/realm-hft.json.template
+           > /opt/keycloak/data/import/realm-hft.json &&
+       /opt/keycloak/bin/kc.sh start-dev --import-realm"
     ports:
       - "8180:8080"
     environment:
@@ -13,8 +19,10 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HOSTNAME_URL: http://localhost:8180
       KC_HTTP_ENABLED: "true"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     volumes:
-      - ./docker/keycloak/realm-hft.json:/opt/keycloak/data/import/realm-hft.json
+      - ./docker/keycloak/realm-hft.json:/opt/keycloak/data/import/realm-hft.json.template
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' 2>/dev/null || exit 1"]
       interval: 10s
