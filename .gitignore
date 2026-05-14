@@ -1,4 +1,7 @@
-# Maven
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 target/
 *.jar
 *.war

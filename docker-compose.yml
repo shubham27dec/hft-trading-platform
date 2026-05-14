@@ -2,6 +2,26 @@ services:
 
   # ── Infrastructure ─────────────────────────────────────────────────────────
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: keycloak
+    command: start-dev --import-realm
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_URL: http://localhost:8180
+      KC_HTTP_ENABLED: "true"
+    volumes:
+      - ./docker/keycloak/realm-hft.json:/opt/keycloak/data/import/realm-hft.json
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' 2>/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: kafka
@@ -10,7 +30,7 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://kafka:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
@@ -31,8 +51,6 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: postgres
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_DB: hft
       POSTGRES_USER: ${DB_USER:-hft}
@@ -65,7 +83,7 @@ services:
       target: order-entry-service
     container_name: order-entry-service
     ports:
-      - "8080:8080"
+      - "8085:8080"
     environment:
       DB_HOST: postgres
       DB_USER: ${DB_USER:-hft}
@@ -75,11 +93,16 @@ services:
       REDIS_PORT: 6379
       ALPACA_KEY_ID: ${ALPACA_KEY_ID}
       ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY}
-      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-http://localhost:8180/realms/hft}
+      JWT_ISSUER_URI: http://localhost:8180/realms/hft
+      JWT_JWK_SET_URI: http://keycloak:8080/realms/hft/protocol/openid-connect/certs
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_USER: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
     depends_on:
-      kafka:    { condition: service_healthy }
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+      kafka:     { condition: service_healthy }
+      postgres:  { condition: service_healthy }
+      redis:     { condition: service_healthy }
+      keycloak:  { condition: service_healthy }
 
   position-service:
     build:
@@ -141,12 +164,14 @@ services:
       context: .
       target: execution-engine
     container_name: execution-engine
+    shm_size: '256m'
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       ALPACA_KEY_ID: ${ALPACA_KEY_ID}
       ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY}
       WAL_PATH: /data/wal
       WATCHED_SYMBOLS: ${WATCHED_SYMBOLS:-AAPL,TSLA,NVDA,MSFT,AMZN}
+      JAVA_TOOL_OPTIONS: "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED"
     volumes:
       - wal-data:/data/wal
     depends_on:

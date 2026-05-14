@@ -4,13 +4,17 @@ import { Positions }    from './components/Positions'
 import { MarketData }   from './components/MarketData'
 import { OrderBook }    from './components/OrderBook'
 import { ActivityFeed } from './components/ActivityFeed'
+import LoginPage        from './components/LoginPage'
 import { fetchRisk, simulatePartition, restorePartition } from './api'
+import keycloak from './keycloak'
 
-export default function App() {
-  const [accountId, setAccountId] = useState('')
-  const [apiKey, setApiKey]       = useState('')
+export default function App({ authenticated: initialAuth }) {
+  const [authenticated, setAuthenticated] = useState(initialAuth)
   const [selectedSymbol, setSelectedSymbol] = useState(null)
   const [risk, setRisk] = useState(null)
+
+  const accountId = keycloak.tokenParsed?.sub ?? ''
+  const username  = keycloak.tokenParsed?.preferred_username ?? ''
 
   useEffect(() => {
     if (!accountId) return
@@ -21,6 +25,10 @@ export default function App() {
     const id = setInterval(load, 5000)
     return () => clearInterval(id)
   }, [accountId])
+
+  if (!authenticated) {
+    return <LoginPage onAuthenticated={() => setAuthenticated(true)} />
+  }
 
   const toggleHalt = async () => {
     try {
@@ -35,17 +43,9 @@ export default function App() {
       <header className="border-b border-gray-800 px-4 py-2 flex items-center gap-4 flex-wrap shrink-0">
         <span className="text-blue-400 font-bold text-base shrink-0">⚡ HFT Platform</span>
 
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400 shrink-0">Account</label>
-          <input className="input w-44" value={accountId}
-            onChange={e => setAccountId(e.target.value)} placeholder="account-id" />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400 shrink-0">API Key</label>
-          <input className="input w-52" type="password" value={apiKey}
-            onChange={e => setApiKey(e.target.value)} placeholder="x-api-key" />
-        </div>
+        <span className="text-xs text-gray-400">
+          Logged in as <span className="text-gray-200 font-medium">{username}</span>
+        </span>
 
         <div className="ml-auto flex items-center gap-4 flex-wrap">
           {risk && (
@@ -75,6 +75,12 @@ export default function App() {
               {risk?.haltActive ? 'Restore' : 'Simulate Partition'}
             </button>
           )}
+
+          <button onClick={() => keycloak.logout()}
+            className="text-xs px-2.5 py-1 rounded border border-gray-700 hover:border-red-500
+                       text-gray-500 hover:text-red-400 transition-colors">
+            Logout
+          </button>
         </div>
       </header>
 
@@ -82,7 +88,7 @@ export default function App() {
       <main className="flex-1 p-3 grid gap-3 overflow-hidden"
         style={{ gridTemplateColumns: '3fr 6fr 3fr', gridTemplateRows: '1fr 1fr' }}>
 
-        <OrderEntry apiKey={apiKey} />
+        <OrderEntry />
         <MarketData onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} />
         <OrderBook symbol={selectedSymbol} />
 

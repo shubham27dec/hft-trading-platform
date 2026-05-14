@@ -4,9 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HFT Trading Platform</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.getElementById('root').innerHTML =
+          '<div style="color:red;padding:20px;font-family:monospace;white-space:pre-wrap;background:#111">' +
+          'JS ERROR: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + e.lineno +
+          '</div>'
+      })
+      window.addEventListener('unhandledrejection', function(e) {
+        document.getElementById('root').innerHTML =
+          '<div style="color:orange;padding:20px;font-family:monospace;white-space:pre-wrap;background:#111">' +
+          'PROMISE ERROR: ' + (e.reason?.message || JSON.stringify(e.reason)) +
+          '</div>'
+      })
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div style="color:#666;padding:20px;font-family:monospace">Loading...</div></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
