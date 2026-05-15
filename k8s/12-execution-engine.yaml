@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: execution-engine-wal-pvc
+  namespace: hft
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: execution-engine
+  namespace: hft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: execution-engine
+  template:
+    metadata:
+      labels:
+        app: execution-engine
+    spec:
+      containers:
+        - name: execution-engine
+          image: hft-trading-platform-execution-engine:latest
+          imagePullPolicy: Never
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: ALPACA_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: ALPACA_KEY_ID
+            - name: ALPACA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: ALPACA_SECRET_KEY
+            - name: WAL_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: WAL_PATH
+            - name: WATCHED_SYMBOLS
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: WATCHED_SYMBOLS
+            - name: JAVA_TOOL_OPTIONS
+              value: "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED"
+          volumeMounts:
+            - name: wal-data
+              mountPath: /data/wal
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: wal-data
+          persistentVolumeClaim:
+            claimName: execution-engine-wal-pvc
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: execution-engine
+  namespace: hft
+spec:
+  selector:
+    app: execution-engine
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

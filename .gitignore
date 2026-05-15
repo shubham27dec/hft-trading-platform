@@ -46,6 +46,9 @@ docker/data/
 ARCHITECTURE.md
 CLAUDE.md
 
+# Kubernetes secrets — never commit real credentials
+k8s/01-secrets.yaml
+
 # Local Maven settings (SAP machine workaround)
 settings.xml
 .envrc
