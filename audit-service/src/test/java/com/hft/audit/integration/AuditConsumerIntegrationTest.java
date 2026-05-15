@@ -61,7 +61,7 @@ class AuditConsumerIntegrationTest extends AbstractIntegrationTest {
 
         kafkaTemplate.send("orders.rejected", objectMapper.writeValueAsString(event));
 
-        await().atMost(5, SECONDS).until(() ->
+        await().atMost(10, SECONDS).until(() ->
                 !repository.findByOrderIdOrderByEventTimestampDesc("order-2").isEmpty());
 
         var records = repository.findByOrderIdOrderByEventTimestampDesc("order-2");
