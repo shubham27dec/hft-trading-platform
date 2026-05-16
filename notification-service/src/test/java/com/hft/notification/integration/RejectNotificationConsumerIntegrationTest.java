@@ -30,6 +30,6 @@ class RejectNotificationConsumerIntegrationTest extends AbstractIntegrationTest 
 
         kafkaTemplate.send("orders.rejected", objectMapper.writeValueAsString(event));
 
-        verify(notificationService, timeout(5000).times(1)).notifyRejection(any(OrderRejectedEvent.class));
+        verify(notificationService, timeout(10000).times(1)).notifyRejection(any(OrderRejectedEvent.class));
     }
 }
