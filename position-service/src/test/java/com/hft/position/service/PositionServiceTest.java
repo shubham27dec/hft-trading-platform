@@ -18,6 +18,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -118,7 +119,7 @@ class PositionServiceTest {
 
         service.applyFill(fill("acc-1", "AAPL", OrderSide.BUY, 100, 150.0));
 
-        verify(valueOps).set(eq("position:acc-1:AAPL"), any());
+        verify(valueOps).set(eq("position:acc-1:AAPL"), any(), eq(24L), eq(TimeUnit.HOURS));
         verify(setOps).add("account:positions:acc-1", "AAPL");
         verify(setOps).add("symbol:accounts:AAPL", "acc-1");
     }
@@ -138,7 +139,7 @@ class PositionServiceTest {
         service.applyFill(fill("acc-1", "AAPL", OrderSide.SELL, 50, 160.0));
 
         verify(objectMapper).readValue(existingJson, Position.class);
-        verify(valueOps).set(eq("position:acc-1:AAPL"), any());
+        verify(valueOps).set(eq("position:acc-1:AAPL"), any(), eq(24L), eq(TimeUnit.HOURS));
     }
 
     // ── applyTick ─────────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ class PositionServiceTest {
         service.applyTick(tick);
 
         assertEquals(1000.0, pos.getUnrealizedPnL(), 0.001);
-        verify(valueOps).set(eq("position:acc-1:AAPL"), any());
+        verify(valueOps).set(eq("position:acc-1:AAPL"), any(), eq(24L), eq(TimeUnit.HOURS));
     }
 
     @Test
@@ -193,7 +194,7 @@ class PositionServiceTest {
 
         service.applyTick(tick);
 
-        verify(valueOps, never()).set(any(), any());
+        verify(valueOps, never()).set(any(), any(), anyLong(), any());
     }
 
     // ── getPositions ──────────────────────────────────────────────────────
@@ -251,7 +252,7 @@ class PositionServiceTest {
 
         service.applyTick(tick);
 
-        verify(valueOps, never()).set(any(), any());
+        verify(valueOps, never()).set(any(), any(), anyLong(), any());
     }
 
     @Test
