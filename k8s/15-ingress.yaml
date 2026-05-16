@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hft-ingress
+  namespace: hft
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: hft.local
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: order-entry-service
+                port:
+                  number: 8080
+          - path: /positions(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: position-service
+                port:
+                  number: 8081
+          - path: /risk(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: risk-dashboard-service
+                port:
+                  number: 8082
+          - path: /notifications(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8083

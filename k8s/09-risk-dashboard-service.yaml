@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: risk-dashboard-service
+  namespace: hft
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: risk-dashboard-service
+  template:
+    metadata:
+      labels:
+        app: risk-dashboard-service
+    spec:
+      containers:
+        - name: risk-dashboard-service
+          image: hft-trading-platform-risk-dashboard-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: risk-dashboard-service
+  namespace: hft
+spec:
+  selector:
+    app: risk-dashboard-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+      nodePort: 30082
+  type: NodePort

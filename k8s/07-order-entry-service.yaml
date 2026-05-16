@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-entry-service
+  namespace: hft
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-entry-service
+  template:
+    metadata:
+      labels:
+        app: order-entry-service
+    spec:
+      containers:
+        - name: order-entry-service
+          image: hft-trading-platform-order-entry-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: DB_HOST
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: DB_PASSWORD
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: REDIS_PORT
+            - name: ALPACA_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: ALPACA_KEY_ID
+            - name: ALPACA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: ALPACA_SECRET_KEY
+            - name: JWT_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: JWT_ISSUER_URI
+            - name: JWT_JWK_SET_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: JWT_JWK_SET_URI
+            - name: KEYCLOAK_ADMIN_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: KEYCLOAK_ADMIN_URL
+            - name: KEYCLOAK_ADMIN_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: hft-config
+                  key: KEYCLOAK_ADMIN_USER
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-entry-service
+  namespace: hft
+spec:
+  selector:
+    app: order-entry-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30085
+  type: NodePort

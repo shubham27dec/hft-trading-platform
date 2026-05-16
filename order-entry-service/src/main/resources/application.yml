@@ -32,6 +32,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/hft}
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8180/realms/hft/protocol/openid-connect/certs}
 
   data:
     redis:
@@ -57,3 +58,10 @@ alpaca:
     secret-key: ${ALPACA_SECRET_KEY:}
   data:
     base-url: https://data.alpaca.markets
+
+keycloak:
+  admin:
+    base-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8180}
+    username: ${KEYCLOAK_ADMIN_USER:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+

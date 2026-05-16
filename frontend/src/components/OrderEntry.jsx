@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { submitOrder } from '../api'
 
-export function OrderEntry({ apiKey }) {
+export function OrderEntry() {
   const [form, setForm] = useState({
     symbol: '', side: 'BUY', type: 'MARKET', quantity: '', limitPrice: '',
   })
@@ -22,7 +22,7 @@ export function OrderEntry({ apiKey }) {
         type: form.type,
         quantity: parseInt(form.quantity, 10),
         limitPrice: form.type === 'LIMIT' ? parseFloat(form.limitPrice) : 0,
-      }, apiKey)
+      })
       setStatus({ ok: true, msg: `${res.status} — ${res.orderId.slice(0, 8)}…` })
       setForm(prev => ({ ...prev, quantity: '', limitPrice: '' }))
     } catch (err) {
@@ -83,7 +83,7 @@ export function OrderEntry({ apiKey }) {
           </Field>
         )}
 
-        <button type="submit" disabled={loading || !apiKey}
+        <button type="submit" disabled={loading}
           className={`w-full py-2 rounded font-semibold text-white transition-colors
             disabled:opacity-40 disabled:cursor-not-allowed ${
             form.side === 'BUY' ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'
@@ -98,7 +98,6 @@ export function OrderEntry({ apiKey }) {
             {status.msg}
           </div>
         )}
-        {!apiKey && <p className="text-xs text-gray-500">Enter API key in header to submit</p>}
       </form>
     </div>
   )

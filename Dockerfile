@@ -3,7 +3,7 @@ FROM eclipse-temurin:25-jdk-noble AS builder
 
 ARG MAVEN_VERSION=3.9.9
 RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && \
-    wget -q https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    wget -q https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
     tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt && \
     rm apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
     apt-get remove -y wget && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
@@ -59,4 +59,14 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:25-jre-noble AS execution-engine
 WORKDIR /app
 COPY --from=builder /build/execution-engine/target/execution-engine.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", \
+  "--add-opens=java.base/java.lang=ALL-UNNAMED", \
+  "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED", \
+  "--add-opens=java.base/java.io=ALL-UNNAMED", \
+  "--add-opens=java.base/java.nio=ALL-UNNAMED", \
+  "--add-opens=java.base/sun.misc=ALL-UNNAMED", \
+  "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", \
+  "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED", \
+  "--add-opens=java.base/java.lang.ref=ALL-UNNAMED", \
+  "-jar", "app.jar"]

@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: hft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0.0
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              sed -e "s|\${GOOGLE_CLIENT_ID}|${GOOGLE_CLIENT_ID}|g" \
+                  -e "s|\${GOOGLE_CLIENT_SECRET}|${GOOGLE_CLIENT_SECRET}|g" \
+                  /opt/keycloak/data/templates/realm-hft.json \
+                  > /tmp/realm-hft.json && \
+              mkdir -p /opt/keycloak/data/import && \
+              cp /tmp/realm-hft.json /opt/keycloak/data/import/realm-hft.json && \
+              /opt/keycloak/bin/kc.sh start-dev --import-realm
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HOSTNAME_URL
+              value: "http://keycloak:8080"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hft-secrets
+                  key: GOOGLE_CLIENT_SECRET
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/templates/realm-hft.json
+              subPath: realm-hft.json
+          resources:
+            requests:
+              memory: "768Mi"
+            limits:
+              memory: "1Gi"
+      volumes:
+        - name: realm-config
+          configMap:
+            name: realm-hft-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: hft
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30180
+  type: NodePort

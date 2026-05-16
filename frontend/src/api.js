@@ -1,3 +1,5 @@
+import keycloak from './keycloak'
+
 const BASE = {
   orders:    '/api/orders',
   positions: '/api/positions',
@@ -5,10 +7,20 @@ const BASE = {
   market:    '/api/market',
 }
 
-export async function submitOrder(order, apiKey) {
+async function authHeaders() {
+  if (keycloak.authenticated && typeof keycloak.updateToken === 'function') {
+    try { await keycloak.updateToken(30) } catch (_) {}
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${keycloak.token}`,
+  }
+}
+
+export async function submitOrder(order) {
   const res = await fetch(BASE.orders, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+    headers: await authHeaders(),
     body: JSON.stringify(order),
   })
   if (!res.ok) {
