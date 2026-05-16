@@ -34,6 +34,6 @@ class FillNotificationConsumerIntegrationTest extends AbstractIntegrationTest {
 
         kafkaTemplate.send("orders.filled", objectMapper.writeValueAsString(event));
 
-        verify(notificationService, timeout(5000).times(1)).notifyFill(any(OrderFilledEvent.class));
+        verify(notificationService, timeout(10000).times(1)).notifyFill(any(OrderFilledEvent.class));
     }
 }

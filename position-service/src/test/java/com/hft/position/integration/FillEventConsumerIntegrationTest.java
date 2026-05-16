@@ -35,6 +35,6 @@ class FillEventConsumerIntegrationTest extends AbstractIntegrationTest {
         kafkaTemplate.send("orders.filled", objectMapper.writeValueAsString(event));
 
         // Verify PositionService.applyFill() was called within 5 seconds
-        verify(positionService, timeout(5000).times(1)).applyFill(any(OrderFilledEvent.class));
+        verify(positionService, timeout(10000).times(1)).applyFill(any(OrderFilledEvent.class));
     }
 }

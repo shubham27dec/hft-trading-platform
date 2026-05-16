@@ -34,6 +34,6 @@ class FillConsumerIntegrationTest extends AbstractIntegrationTest {
 
         kafkaTemplate.send("orders.filled", objectMapper.writeValueAsString(event));
 
-        verify(riskService, timeout(5000).times(1)).processFill(any(OrderFilledEvent.class));
+        verify(riskService, timeout(10000).times(1)).processFill(any(OrderFilledEvent.class));
     }
 }

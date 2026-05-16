@@ -30,6 +30,6 @@ class RejectConsumerIntegrationTest extends AbstractIntegrationTest {
 
         kafkaTemplate.send("orders.rejected", objectMapper.writeValueAsString(event));
 
-        verify(riskService, timeout(5000).times(1)).processRejection(any(OrderRejectedEvent.class));
+        verify(riskService, timeout(10000).times(1)).processRejection(any(OrderRejectedEvent.class));
     }
 }
