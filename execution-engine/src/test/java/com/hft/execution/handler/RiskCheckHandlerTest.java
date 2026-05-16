@@ -3,6 +3,7 @@ package com.hft.execution.handler;
 import com.hft.core.enums.OrderSide;
 import com.hft.core.enums.OrderType;
 import com.hft.execution.dedup.BloomFilterDedup;
+import com.hft.execution.dedup.SymbolWatchlist;
 import com.hft.execution.event.OrderEvent;
 import com.hft.execution.event.OrderEventFactory;
 import com.hft.execution.risk.HaltBit;
@@ -22,6 +23,7 @@ class RiskCheckHandlerTest {
 
     private HaltBit haltBit;
     private BloomFilterDedup dedup;
+    private SymbolWatchlist symbolWatchlist;
     private RiskCheckHandler handler;
     private Disruptor<OrderEvent> routingDisruptor;
     private BlockingQueue<OrderEvent> captured;
@@ -30,6 +32,7 @@ class RiskCheckHandlerTest {
     void setUp() {
         haltBit = new HaltBit();
         dedup = new BloomFilterDedup();
+        symbolWatchlist = new SymbolWatchlist(java.util.Set.of("AAPL", "TSLA", "NVDA", "MSFT", "AMZN"));
         captured = new LinkedBlockingQueue<>();
 
         routingDisruptor = new Disruptor<>(new OrderEventFactory(), 64, DaemonThreadFactory.INSTANCE);
@@ -40,7 +43,7 @@ class RiskCheckHandlerTest {
         });
         routingDisruptor.start();
 
-        handler = new RiskCheckHandler(haltBit, dedup, routingDisruptor.getRingBuffer());
+        handler = new RiskCheckHandler(haltBit, dedup, symbolWatchlist, routingDisruptor.getRingBuffer());
     }
 
     @AfterEach
@@ -91,6 +94,27 @@ class RiskCheckHandlerTest {
         assertNotNull(forwarded);
         assertFalse(forwarded.riskPassed);
         assertTrue(forwarded.rejectionReason.contains("quantity"));
+    }
+
+    @Test
+    void symbolNotInWatchlist_bloomFilterRejects() throws Exception {
+        handler.onEvent(buildEventWithSymbol("order-6", "client-6", 100, "UNKNOWN_SYM"), 0, false);
+
+        OrderEvent forwarded = captured.poll(1, TimeUnit.SECONDS);
+        assertNotNull(forwarded);
+        assertFalse(forwarded.riskPassed);
+        assertTrue(forwarded.rejectionReason.contains("not in watchlist"));
+    }
+
+    private OrderEvent buildEventWithSymbol(String orderId, String clientOrderId, long qty, String symbol) {
+        OrderEvent event = new OrderEvent();
+        event.orderId = orderId;
+        event.clientOrderId = clientOrderId;
+        event.symbol = symbol;
+        event.side = OrderSide.BUY;
+        event.type = OrderType.MARKET;
+        event.quantity = qty;
+        return event;
     }
 
     private OrderEvent buildEvent(String orderId, String clientOrderId, long qty) {

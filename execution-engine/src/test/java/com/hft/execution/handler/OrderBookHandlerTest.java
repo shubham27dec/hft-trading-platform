@@ -2,21 +2,31 @@ package com.hft.execution.handler;
 
 import com.hft.execution.event.TickEvent;
 import com.hft.execution.feed.PriceCache;
+import com.hft.execution.kafka.TickKafkaPublisher;
 import com.hft.execution.venue.VenueQuote;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class OrderBookHandlerTest {
 
     private PriceCache priceCache;
+    private TickKafkaPublisher tickPublisher;
     private OrderBookHandler handler;
 
     @BeforeEach
     void setUp() {
         priceCache = new PriceCache();
-        handler = new OrderBookHandler(priceCache);
+        tickPublisher = mock(TickKafkaPublisher.class);
+        handler = new OrderBookHandler(priceCache, tickPublisher);
+    }
+
+    @AfterEach
+    void tearDown() {
+        priceCache.close();
     }
 
     @Test

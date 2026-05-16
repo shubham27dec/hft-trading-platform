@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { submitOrder } from '../api'
+import { useQuotes } from '../hooks/useQuotes'
 
 export function OrderEntry() {
+  const quotes = useQuotes()
   const [form, setForm] = useState({
     symbol: '', side: 'BUY', type: 'MARKET', quantity: '', limitPrice: '',
   })
@@ -32,14 +34,35 @@ export function OrderEntry() {
     }
   }
 
+  const selectedQuote = quotes.find(q => q.symbol === form.symbol)
+
   return (
     <div className="panel">
       <h2 className="panel-title">Order Entry</h2>
       <form onSubmit={handleSubmit} className="space-y-3 flex-1">
         <Field label="Symbol">
-          <input className="input" value={form.symbol}
-            onChange={e => set('symbol', e.target.value.toUpperCase())}
-            placeholder="AAPL" required maxLength={6} />
+          {quotes.length > 0 ? (
+            <select className="input" value={form.symbol} required
+              onChange={e => set('symbol', e.target.value)}>
+              <option value="">Select symbol…</option>
+              {quotes.map(q => (
+                <option key={q.symbol} value={q.symbol}>
+                  {q.symbol} — ${q.lastPrice.toFixed(2)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input className="input" value={form.symbol}
+              onChange={e => set('symbol', e.target.value.toUpperCase())}
+              placeholder="AAPL" required maxLength={6} />
+          )}
+          {selectedQuote && (
+            <p className="text-xs text-gray-500 mt-1">
+              Bid <span className="text-green-400">${selectedQuote.bidPrice.toFixed(2)}</span>
+              {' · '}
+              Ask <span className="text-red-400">${selectedQuote.askPrice.toFixed(2)}</span>
+            </p>
+          )}
         </Field>
 
         <Field label="Side">

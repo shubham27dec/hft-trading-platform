@@ -1,26 +1,60 @@
 package com.hft.execution.feed;
 
 import com.hft.execution.venue.VenueQuote;
+import net.openhft.chronicle.map.ChronicleMap;
 
-import java.util.concurrent.ConcurrentHashMap;
+public class PriceCache implements AutoCloseable {
 
-public class PriceCache {
+    // Off-heap Chronicle Map — data lives outside JVM heap, GC never scans it.
+    // getUsing() reads into a pre-allocated ThreadLocal entry — zero allocation on hot path.
+    private final ChronicleMap<String, PriceEntry> map;
+    private final ThreadLocal<PriceEntry> tlEntry = ThreadLocal.withInitial(PriceEntry::new);
 
-    private final ConcurrentHashMap<String, VenueQuote> cache = new ConcurrentHashMap<>();
+    public PriceCache() {
+        try {
+            this.map = ChronicleMap
+                    .of(String.class, PriceEntry.class)
+                    .name("price-cache")
+                    .entries(500)
+                    .averageKey("AAPL")
+                    .averageValueSize(24) // 3 doubles × 8 bytes each
+                    .create();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialise PriceCache", e);
+        }
+    }
 
     public void update(String symbol, double ask, double bid) {
-        cache.put(symbol, new VenueQuote(ask, bid));
+        PriceEntry entry = tlEntry.get();
+        entry.ask = ask;
+        entry.bid = bid;
+        map.put(symbol, entry);
+    }
+
+    public void update(String symbol, double ask, double bid, double last) {
+        PriceEntry entry = tlEntry.get();
+        entry.ask  = ask;
+        entry.bid  = bid;
+        if (last > 0) entry.last = last;
+        map.put(symbol, entry);
     }
 
     public VenueQuote get(String symbol) {
-        return cache.get(symbol);
+        PriceEntry result = map.getUsing(symbol, tlEntry.get());
+        if (result == null) return null;
+        return new VenueQuote(result.ask, result.bid);
     }
 
     public boolean contains(String symbol) {
-        return cache.containsKey(symbol);
+        return map.containsKey(symbol);
     }
 
     public int size() {
-        return cache.size();
+        return map.size();
+    }
+
+    @Override
+    public void close() {
+        map.close();
     }
 }

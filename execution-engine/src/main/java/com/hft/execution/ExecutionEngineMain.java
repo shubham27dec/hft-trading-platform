@@ -3,6 +3,7 @@ package com.hft.execution;
 import com.hft.execution.aeron.AeronOrderSubscriber;
 import com.hft.execution.aeron.AeronPublishHandler;
 import com.hft.execution.dedup.BloomFilterDedup;
+import com.hft.execution.dedup.SymbolWatchlist;
 import com.hft.execution.event.OrderEvent;
 import com.hft.execution.event.OrderEventFactory;
 import com.hft.execution.event.TickEvent;
@@ -16,6 +17,7 @@ import com.hft.execution.handler.RiskCheckHandler;
 import com.hft.execution.handler.RoutingHandler;
 import com.hft.execution.kafka.FillKafkaProducer;
 import com.hft.execution.kafka.OrderEventConsumer;
+import com.hft.execution.kafka.TickKafkaPublisher;
 import com.hft.execution.risk.HaltBit;
 import com.hft.execution.venue.AlpacaExecutionVenue;
 import com.hft.execution.venue.SimulatedExecutionVenue;
@@ -54,6 +56,7 @@ public class ExecutionEngineMain {
         HaltBit haltBit = new HaltBit();
         haltBit.startWatchdog();
         BloomFilterDedup dedup = new BloomFilterDedup();
+        SymbolWatchlist symbolWatchlist = new SymbolWatchlist(watchedSymbols);
         PriceCache priceCache = new PriceCache();
 
         // Venues
@@ -63,6 +66,7 @@ public class ExecutionEngineMain {
         // Infrastructure
         ChronicleWAL wal = new ChronicleWAL(walPath);
         FillKafkaProducer kafkaProducer = new FillKafkaProducer(bootstrapServers);
+        TickKafkaPublisher tickPublisher = new TickKafkaPublisher(bootstrapServers);
 
         // Aeron embedded media driver + IPC channel
         MediaDriver mediaDriver = MediaDriver.launchEmbedded();
@@ -82,13 +86,13 @@ public class ExecutionEngineMain {
         Disruptor<OrderEvent> riskDisruptor = new Disruptor<>(
                 new OrderEventFactory(), 1024, DaemonThreadFactory.INSTANCE);
         riskDisruptor.handleEventsWith(
-                new RiskCheckHandler(haltBit, dedup, routingDisruptor.getRingBuffer()));
+                new RiskCheckHandler(haltBit, dedup, symbolWatchlist, routingDisruptor.getRingBuffer()));
         riskDisruptor.start();
 
         // Disruptor #1 — tick pipeline (OrderBookHandler updates PriceCache)
         Disruptor<TickEvent> tickDisruptor = new Disruptor<>(
                 new TickEventFactory(), 4096, DaemonThreadFactory.INSTANCE);
-        tickDisruptor.handleEventsWith(new OrderBookHandler(priceCache));
+        tickDisruptor.handleEventsWith(new OrderBookHandler(priceCache, tickPublisher));
         tickDisruptor.start();
 
         // Feed handler: Alpaca WebSocket → Disruptor #1
@@ -129,6 +133,8 @@ public class ExecutionEngineMain {
             mediaDriver.close();
             try { wal.close(); } catch (Exception e) { log.warn("WAL close error: {}", e.getMessage()); }
             try { kafkaProducer.close(); } catch (Exception e) { log.warn("Producer close error: {}", e.getMessage()); }
+            try { tickPublisher.close(); } catch (Exception e) { log.warn("TickPublisher close error: {}", e.getMessage()); }
+            try { priceCache.close(); } catch (Exception e) { log.warn("PriceCache close error: {}", e.getMessage()); }
         }));
 
         consumerThread.join();

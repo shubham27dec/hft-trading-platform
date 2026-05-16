@@ -30,6 +30,8 @@ async function ropcLogin(username, password) {
   keycloak.tokenParsed = parseJwt(data.access_token)
   keycloak.authenticated = true
   keycloak.subject = keycloak.tokenParsed?.sub
+  localStorage.setItem('hft_token', data.access_token)
+  localStorage.setItem('hft_refresh_token', data.refresh_token)
 }
 
 export default function LoginPage({ onAuthenticated }) {

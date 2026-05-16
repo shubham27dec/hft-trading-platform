@@ -56,7 +56,7 @@ COPY --from=builder /build/audit-service/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # ── Stage 7: execution-engine ─────────────────────────────────────────────────
-FROM eclipse-temurin:25-jre-noble AS execution-engine
+FROM eclipse-temurin:25-jdk-noble AS execution-engine
 WORKDIR /app
 COPY --from=builder /build/execution-engine/target/execution-engine.jar app.jar
 ENTRYPOINT ["java", \
@@ -69,4 +69,8 @@ ENTRYPOINT ["java", \
   "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", \
   "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED", \
   "--add-opens=java.base/java.lang.ref=ALL-UNNAMED", \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED", \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED", \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED", \
+  "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED", \
   "-jar", "app.jar"]

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -26,14 +27,22 @@ public class PositionService {
     private static final String POS_KEY         = "position:%s:%s";
     private static final String ACCOUNT_POS_KEY = "account:positions:%s";
     private static final String SYMBOL_ACC_KEY  = "symbol:accounts:%s";
+    // 24h TTL — position keys participate in volatile-lfu eviction.
+    // Active traders' positions (read frequently) survive; stale ones evicted first.
+    private static final long POS_TTL_HOURS = 24;
 
     public void applyFill(OrderFilledEvent fill) {
         String key = posKey(fill.getAccountId(), fill.getSymbol());
         Position position = load(fill.getAccountId(), fill.getSymbol());
         position = computeNewPosition(position, fill);
         save(key, position);
-        redis.opsForSet().add(String.format(ACCOUNT_POS_KEY, fill.getAccountId()), fill.getSymbol());
-        redis.opsForSet().add(String.format(SYMBOL_ACC_KEY, fill.getSymbol()), fill.getAccountId());
+        String accPosKey = String.format(ACCOUNT_POS_KEY, fill.getAccountId());
+        String symAccKey = String.format(SYMBOL_ACC_KEY, fill.getSymbol());
+        redis.opsForSet().add(accPosKey, fill.getSymbol());
+        redis.opsForSet().add(symAccKey, fill.getAccountId());
+        // Refresh TTL on index keys so they also participate in volatile-lfu eviction
+        redis.expire(accPosKey, POS_TTL_HOURS, TimeUnit.HOURS);
+        redis.expire(symAccKey, POS_TTL_HOURS, TimeUnit.HOURS);
         log.info("Position updated: account={} symbol={} netQty={} realizedPnL={}",
                 fill.getAccountId(), fill.getSymbol(), position.getNetQty(), position.getRealizedPnL());
     }
@@ -116,7 +125,8 @@ public class PositionService {
 
     private void save(String key, Position position) {
         try {
-            redis.opsForValue().set(key, objectMapper.writeValueAsString(position));
+            redis.opsForValue().set(key, objectMapper.writeValueAsString(position),
+                    POS_TTL_HOURS, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("Failed to save position {}: {}", key, e.getMessage());
         }

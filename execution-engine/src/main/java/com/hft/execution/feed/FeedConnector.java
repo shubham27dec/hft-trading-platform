@@ -99,6 +99,7 @@ public class FeedConnector {
 
         @Override
         public void onOpen(WebSocket ws) {
+            socket.set(ws);
             connected.countDown();
             ws.request(1);
         }

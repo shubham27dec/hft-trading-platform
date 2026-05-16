@@ -98,9 +98,18 @@ public class OrderService {
                 Tick tick = new Tick();
                 tick.setSymbol(sym);
                 tick.setBidPrice(entry.getLatestQuote().getBp());
-                tick.setAskPrice(entry.getLatestQuote().getAp());
+                double ask = entry.getLatestQuote().getAp();
+                // Fallback when market is closed (ap=0): use last trade price as synthetic ask
+                if (ask <= 0 && entry.getLatestTrade() != null && entry.getLatestTrade().getP() > 0) {
+                    ask = entry.getLatestTrade().getP();
+                }
+                tick.setAskPrice(ask);
                 tick.setBidSize(entry.getLatestQuote().getBs());
                 tick.setAskSize(entry.getLatestQuote().getAs());
+                if (entry.getLatestTrade() != null) {
+                    tick.setLastPrice(entry.getLatestTrade().getP());
+                    tick.setVolume(entry.getDailyBar() != null ? entry.getDailyBar().getV() : 0L);
+                }
                 redisTemplate.opsForValue().set(QUOTE_CACHE_PREFIX + sym,
                         objectMapper.writeValueAsString(tick), QUOTE_TTL);
             } catch (Exception e) {
@@ -114,6 +123,4 @@ public class OrderService {
         }
         return (entry.getLatestQuote().getAp() + entry.getLatestQuote().getBp()) / 2.0;
     }
-
-    record QuoteResult(double price) {}
 }

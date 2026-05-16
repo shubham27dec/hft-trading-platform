@@ -6,6 +6,7 @@ import com.hft.execution.event.OrderEvent;
 import com.hft.execution.feed.PriceCache;
 import com.hft.execution.venue.ExecutionVenue;
 import com.hft.execution.venue.VenueQuote;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,11 @@ class RoutingHandlerTest {
         lenient().when(alpaca.name()).thenReturn("ALPACA");
         lenient().when(simulated.name()).thenReturn("SIMULATED");
         handler = new RoutingHandler(alpaca, simulated, priceCache);
+    }
+
+    @AfterEach
+    void tearDown() {
+        priceCache.close();
     }
 
     @Test

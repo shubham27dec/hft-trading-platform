@@ -1,6 +1,7 @@
 package com.hft.execution.handler;
 
 import com.hft.execution.dedup.BloomFilterDedup;
+import com.hft.execution.dedup.SymbolWatchlist;
 import com.hft.execution.event.OrderEvent;
 import com.hft.execution.risk.HaltBit;
 import com.lmax.disruptor.EventHandler;
@@ -14,18 +15,24 @@ public class RiskCheckHandler implements EventHandler<OrderEvent> {
 
     private final HaltBit haltBit;
     private final BloomFilterDedup dedup;
+    private final SymbolWatchlist symbolWatchlist;
     private final RingBuffer<OrderEvent> routingBuffer;
 
     public RiskCheckHandler(HaltBit haltBit, BloomFilterDedup dedup,
+                            SymbolWatchlist symbolWatchlist,
                             RingBuffer<OrderEvent> routingBuffer) {
         this.haltBit = haltBit;
         this.dedup = dedup;
+        this.symbolWatchlist = symbolWatchlist;
         this.routingBuffer = routingBuffer;
     }
 
     @Override
     public void onEvent(OrderEvent event, long sequence, boolean endOfBatch) {
-        if (haltBit.isHalted()) {
+        if (!symbolWatchlist.isWatched(event.symbol)) {
+            // Bloom Filter fast-reject: definitely not in watchlist — skip all further processing
+            reject(event, "Symbol not in watchlist: " + event.symbol);
+        } else if (haltBit.isHalted()) {
             reject(event, "Trading halted");
         } else if (dedup.isDuplicate(event.clientOrderId)) {
             reject(event, "Duplicate clientOrderId: " + event.clientOrderId);

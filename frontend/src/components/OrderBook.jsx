@@ -15,7 +15,7 @@ export function OrderBook({ symbol }) {
       {symbol && !q && <p className="text-sm text-gray-500">No quote cached yet</p>}
 
       {q && (
-        <div className="space-y-2 mt-1">
+        <div className="space-y-2 mt-1 overflow-auto flex-1">
           <PriceRow label="Ask" price={q.askPrice} size={q.askSize} color="text-red-400" />
           <div className="text-xs text-gray-500 text-center py-0.5">
             spread ${(q.askPrice - q.bidPrice).toFixed(3)}

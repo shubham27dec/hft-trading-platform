@@ -6,12 +6,7 @@ services:
     image: quay.io/keycloak/keycloak:26.0.0
     container_name: keycloak
     entrypoint: ["/bin/bash", "-c"]
-    command: >
-      "sed -e \"s|\\${GOOGLE_CLIENT_ID}|${GOOGLE_CLIENT_ID}|g\"
-           -e \"s|\\${GOOGLE_CLIENT_SECRET}|${GOOGLE_CLIENT_SECRET}|g\"
-           /opt/keycloak/data/import/realm-hft.json.template
-           > /opt/keycloak/data/import/realm-hft.json &&
-       /opt/keycloak/bin/kc.sh start-dev --import-realm"
+    command: ["sed 's|$${GOOGLE_CLIENT_ID}|${GOOGLE_CLIENT_ID}|g;s|$${GOOGLE_CLIENT_SECRET}|${GOOGLE_CLIENT_SECRET}|g' /tmp/realm-hft.json.template > /tmp/realm-hft.json && mkdir -p /opt/keycloak/data/import && cp /tmp/realm-hft.json /opt/keycloak/data/import/realm-hft.json && /opt/keycloak/bin/kc.sh start-dev --import-realm"]
     ports:
       - "8180:8080"
     environment:
@@ -22,7 +17,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     volumes:
-      - ./docker/keycloak/realm-hft.json:/opt/keycloak/data/import/realm-hft.json.template
+      - keycloak-data:/opt/keycloak/data
+      - ./docker/keycloak/realm-hft.json:/tmp/realm-hft.json.template
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' 2>/dev/null || exit 1"]
       interval: 10s
@@ -75,6 +71,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lfu
     ports:
       - "6379:6379"
     healthcheck:
@@ -178,7 +175,7 @@ services:
       ALPACA_KEY_ID: ${ALPACA_KEY_ID}
       ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY}
       WAL_PATH: /data/wal
-      WATCHED_SYMBOLS: ${WATCHED_SYMBOLS:-AAPL,TSLA,NVDA,MSFT,AMZN}
+      WATCHED_SYMBOLS: ${WATCHED_SYMBOLS:-AAPL,TSLA,NVDA,MSFT,AMZN,GOOGL,META,AMD,NFLX,SPY}
       JAVA_TOOL_OPTIONS: "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED"
     volumes:
       - wal-data:/data/wal
@@ -218,3 +215,4 @@ volumes:
   postgres-data:
   wal-data:
   grafana-data:
+  keycloak-data:

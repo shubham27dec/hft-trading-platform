@@ -45,6 +45,7 @@ docker/data/
 # Internal docs
 ARCHITECTURE.md
 CLAUDE.md
+learnings.md
 
 # Kubernetes secrets — never commit real credentials
 k8s/01-secrets.yaml
