@@ -55,6 +55,7 @@ public class PriceCache implements AutoCloseable {
 
     @Override
     public void close() {
+        tlEntry.remove();
         map.close();
     }
 }
